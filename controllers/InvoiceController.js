@@ -305,7 +305,7 @@ console.log("licenseNo",licenseNo)
 
     if (!pharmadata || pharmadata.length === 0) {
         res.status(404);
-        throw new Error('No data found for this license number. You can add customer details from the home screen by clicking Add Customer.');
+        throw new Error(`No data found for this license number. You can add customer details from the home screen by clicking ${Addcustomer}.`);
     }
 
     res.status(200).json({
