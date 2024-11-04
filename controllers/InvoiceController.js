@@ -43,10 +43,10 @@ const InvoiceController =asyncHandler(async (req,res)=>{
 })
 
 //@desc get invoice data
-//@router /api/user/getInvoice/:licenseNo
+//@router /api/user/getInvoice
 //access public
 const getInvoiceData=asyncHandler(async (req,res)=>{
-    const { licenseNo } = req.params;
+    const  licenseNo  = req.query.licenseNo;
 console.log("licenseNo",licenseNo)
     // Validate license number
     if (!licenseNo) {
@@ -64,7 +64,8 @@ console.log("licenseNo",licenseNo)
          delayDays:1,
          invoiceAmount:1,
          invoiceDate:1,
-         reason:1
+         reason:1,
+         createdAt:1
   
     }).lean()       
 
@@ -86,7 +87,7 @@ console.log("licenseNo",licenseNo)
 //@router /api/user/getInvoiceRD/:licenseNo
 //access public
 const getInvoiceRDData=asyncHandler(async (req,res)=>{
-    const { licenseNo } = req.params;
+    const  licenseNo  = req.query.licenseNo;
 console.log("licenseNo",licenseNo)
     // Validate license number
     if (!licenseNo) {
@@ -130,10 +131,10 @@ console.log("licenseNo",licenseNo)
     });
 })
 //@desc get invoiceRD data
-//@router /api/user/getInvoiceRDforDistUpdate/:licenseNo
+//@router /api/user/getInvoiceRDforDistUpdate
 //access public
 const getInvoiceRDDataforDistUpdate=asyncHandler(async (req,res)=>{
-    const { licenseNo } = req.params;
+    const  licenseNo  = req.query.licenseNo;
 console.log("licenseNo",licenseNo)
     // Validate license number
     if (!licenseNo) {
@@ -173,10 +174,11 @@ console.log("licenseNo",licenseNo)
     });
 })
 //@desc get invoiceRD data
-//@router /api/user/getInvoiceRDforDist/:licenseNo/:distId
+//@router /api/user/getInvoiceRDforDist/:distId
 //access public
 const getInvoiceRDDataforDist=asyncHandler(async (req,res)=>{
-    const { licenseNo,distId } = req.params;
+    const { distId } = req.params;
+    const licenseNo = req.query.licenseNo;
 console.log("licenseNo",licenseNo)
     // Validate license number
     if (!licenseNo) {
@@ -279,11 +281,11 @@ const linkpharmaController =asyncHandler(async(req,res)=>{
         }
 })
 //@desc get invoice data
-//@router /api/user/getPharmaData/:licenseNo
+//@router /api/user/getPharmaData/
 //access public
 const getPharmaData=asyncHandler(async (req,res)=>{
-    const { licenseNo } = req.params;
-// console.log("licenseNo",licenseNo)
+    const  licenseNo  = req.query.licenseNo;
+console.log("licenseNo",licenseNo)
     // Validate license number
     if (!licenseNo) {
         res.status(400);
@@ -303,7 +305,7 @@ const getPharmaData=asyncHandler(async (req,res)=>{
 
     if (!pharmadata || pharmadata.length === 0) {
         res.status(404);
-        throw new Error('No data found for this license number');
+        throw new Error('No data found for this license number. You can add customer details from the home screen by clicking Add Customer.');
     }
 
     res.status(200).json({
@@ -381,7 +383,7 @@ const getPData=asyncHandler(async(req,res)=>{
 })
 
 // @desc    Download Excel report
-// @route   GET /api/user/downloadReport/:license/excel
+// @route   GET /api/user/downloadReport/excel
 // @access  Public
 const downloadExcelReport = asyncHandler(async (req, res) => {
     try {
@@ -390,7 +392,7 @@ const downloadExcelReport = asyncHandler(async (req, res) => {
             throw new Error('ExcelJS not properly initialized');
         }
 
-        const license = req.params.license;
+        const license = req.query.license;
         
         // Log to debug
         console.log('Creating Excel report for license:', license);

@@ -11,7 +11,7 @@ const jwt=require("jsonwebtoken")
 
 const registerController= asyncHandler(async (req,res)=>{
     const { pharmacy_name, email, phone_number, dl_code, address, password,expiry_date } = req.body;
-    if(!pharmacy_name || !email || !phone_number || !dl_code || !address || !password)
+    if(!pharmacy_name || !email || !phone_number || !dl_code || !address)
     {
         res.status(400)
         return res.json({ message: "All fields are mandatory" });
@@ -35,9 +35,12 @@ const registerController= asyncHandler(async (req,res)=>{
         password:bcryptedPassword
     })
     console.log("register",register)
+    register.generatePasswordReset();
+        await register.save();
     if(register)
     {
-        res.status(201).json({_id:register.id,pharmacy_name:register.pharmacy_name,email:register.email,phone_number:register.phone_number,dl_code:register.dl_code,address:register.address,expiry_date:register.expiry_date})
+        res.status(201).json({_id:register.id,pharmacy_name:register.pharmacy_name,email:register.email,phone_number:register.phone_number,dl_code:register.dl_code,address:register.address,expiry_date:register.expiry_date,resetPasswordToken: register.resetPasswordToken,
+            resetPasswordExpires: register.resetPasswordExpires})
     }
     else{
         res.status(400).json({message:"Registration Failed"})
@@ -115,7 +118,7 @@ const loginUser = asyncHandler(async (req,res)=>{
      },process.env.ACCESS_TOKEN_SECRET,
      {expiresIn:"15min"}
     );
-    res.status(200).json({jwttoken:accesstoken,usertype:"Pharma",id:login1._id})
+    res.status(200).json({jwttoken:accesstoken,usertype:"Pharma",id:login1._id,pharmacy_name:login1.pharmacy_name})
    }
    if(login2 && (await bcrypt.compare(password,login2.password)))
     {
@@ -131,7 +134,7 @@ const loginUser = asyncHandler(async (req,res)=>{
       },process.env.ACCESS_TOKEN_SECRET,
       {expiresIn:"15min"}
      );
-     res.status(200).json({jwttoken:accesstoken,usertype:"Dist",id:login2._id})
+     res.status(200).json({jwttoken:accesstoken,usertype:"Dist",id:login2._id,pharmacy_name:login2.pharmacy_name})
     }
     if(login3 && (await bcrypt.compare(password,login3.password)))
         {
