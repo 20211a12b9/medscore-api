@@ -6,7 +6,7 @@ const cors = require('cors');
 connectDb();
 const app=express();
 app.use(express.json());
-const port=process.env.port;
+const port=process.env.port || 5001;
 
 app.use(cors())
 app.use("/api/user",require("./Router/registerRoutes"))
