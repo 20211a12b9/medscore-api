@@ -6,6 +6,7 @@ const InvoiceRD=require("../models/invoiceReportDefaultModel")
 const ExcelJS = require('exceljs');
 const { default: mongoose } = require("mongoose");
 const nodeCron = require('node-cron'); 
+const { assign } = require("nodemailer/lib/shared");
 
 
 
@@ -110,7 +111,8 @@ console.log("licenseNo",licenseNo)
          dispute:1,
          updatebydist:1,
          reasonforDispute:1,
-         updatebydistBoolean:1
+         updatebydistBoolean:1,
+         createdAt:1
 
   
     }).lean()       
@@ -633,6 +635,55 @@ nodeCron.schedule('0 0 * * *', () => {
 // If you want to run it immediately when the server starts
 updateReportDefaultStatus();
 
-module.exports={InvoiceController,getInvoiceData,linkpharmaController,getPharmaData,InvoiceReportDefaultController,getInvoiceRDData,getPData,downloadExcelReport,countNotices,checkIfLinked,getInvoiceRDDataforDist,updateDefault,getInvoiceRDDataforDistUpdate,disputebyPharma,adminupdate,updateReportDefaultStatus}
+//@desc get invoice done by dist by id
+//@router get/api/user/getinvoicesbydistId/:id
+//access public
+const getinvoicesbydistId=asyncHandler(async(req,res)=>{
+    const customerId=req.params.id;
+    if(!customerId)
+    {
+        res.status(400)
+        throw new Error("id required")
+        
+    }
+    const invoices=await Invoice.find({customerId:customerId})
+
+    const invoicewithserialnumbers=invoices.map((invoice,index)=>({
+           serialNo:index+1,
+           ...invoice.toObject()
+    }))
+    res.status(200).json({
+        success: true,
+        count: invoicewithserialnumbers.length,
+        data: invoicewithserialnumbers
+    });
+
+})
+
+//@desc get invoice done by dist by id
+//@router get/api/user/getinvoiceRDbydistId/:id
+//access public
+const getinvoiceRDbydistId=asyncHandler(async(req,res)=>{
+    const customerId=req.params.id;
+    if(!customerId)
+    {
+        res.status(400)
+        throw new Error("id required")
+        
+    }
+    const invoices=await InvoiceRD.find({customerId:customerId,reportDefault:"true"})
+
+    const invoicewithserialnumbers=invoices.map((invoice,index)=>({
+           serialNo:index+1,
+           ...invoice.toObject()
+    }))
+    res.status(200).json({
+        success: true,
+        count: invoicewithserialnumbers.length,
+        data: invoicewithserialnumbers
+    });
+
+})
+module.exports={InvoiceController,getInvoiceData,linkpharmaController,getPharmaData,InvoiceReportDefaultController,getInvoiceRDData,getPData,downloadExcelReport,countNotices,checkIfLinked,getInvoiceRDDataforDist,updateDefault,getInvoiceRDDataforDistUpdate,disputebyPharma,adminupdate,updateReportDefaultStatus,getinvoicesbydistId,getinvoiceRDbydistId}
 
 

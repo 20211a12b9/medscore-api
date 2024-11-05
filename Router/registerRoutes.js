@@ -1,6 +1,6 @@
 const express=require("express");
 const { registerController, registerController2, loginUser, getDistData, adminController, getDistDataController } = require("../controllers/RegisterController");
-const { InvoiceController, getInvoiceData, getPharmaData, linkpharmaController, InvoiceReportDefaultController, getInvoiceRDData, getPData, downloadExcelReport, countNotices, getPharmaData2, checkIfLinked, getInvoiceRDDataforDist, updateDefault, getInvoiceRDDataforDistUpdate, disputebyPharma, checkdispute, adminupdate } = require("../controllers/InvoiceController");
+const { InvoiceController, getInvoiceData, getPharmaData, linkpharmaController, InvoiceReportDefaultController, getInvoiceRDData, getPData, downloadExcelReport, countNotices, getPharmaData2, checkIfLinked, getInvoiceRDDataforDist, updateDefault, getInvoiceRDDataforDistUpdate, disputebyPharma, checkdispute, adminupdate, getinvoicesbydistId, getinvoiceRDbydistId } = require("../controllers/InvoiceController");
 const { sendSms } = require("../controllers/sendSMSController");
 const { ResetPassword, confirmResetPassword } = require("../controllers/ResetPasswordController");
 
@@ -31,4 +31,6 @@ router.put('/disputebyPharma/:pharmadrugliseanceno/:invoice/:customerId',dispute
 router.put('/adminupdate/:pharmadrugliseanceno/:invoice/:customerId',adminupdate)
 router.post('/resetpassword',ResetPassword)
 router.post('/confirmResetPassword',confirmResetPassword)
+router.get('/getinvoicesbydistId/:id', getinvoicesbydistId);
+router.get('/getinvoiceRDbydistId/:id', getinvoiceRDbydistId);
 module.exports=router;
