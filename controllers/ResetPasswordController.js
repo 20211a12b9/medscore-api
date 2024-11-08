@@ -41,7 +41,7 @@ const ResetPassword = asyncHandler(async (req, res) => {
         });
 
         // Format phone number and remove any spaces
-        const fullPhoneNumber = `+91${user.phone_number.replace(/\s+/g, '')}`;
+        const fullPhoneNumber = `+91${user.phone_number}`;
         
         try {
             // Send SMS
