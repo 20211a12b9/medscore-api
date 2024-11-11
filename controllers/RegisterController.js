@@ -39,8 +39,20 @@ const registerController= asyncHandler(async (req,res)=>{
         await register.save();
     if(register)
     {
-        res.status(201).json({_id:register.id,pharmacy_name:register.pharmacy_name,email:register.email,phone_number:register.phone_number,dl_code:register.dl_code,address:register.address,expiry_date:register.expiry_date,resetPasswordToken: register.resetPasswordToken,
-            resetPasswordExpires: register.resetPasswordExpires})
+        res.status(201).json({
+            message: "Registration successful",
+            user: {
+              _id: register.id,
+              pharmacy_name: register.pharmacy_name,
+              email: register.email,
+              phone_number: register.phone_number,
+              dl_code: register.dl_code,
+              address: register.address,
+              expiry_date: register.expiry_date,
+              resetPasswordToken: register.resetPasswordToken,
+              resetPasswordExpires: register.resetPasswordExpires,
+            },
+          });
     }
     else{
         res.status(400).json({message:"Registration Failed"})
@@ -80,9 +92,23 @@ const registerController2= asyncHandler(async (req,res)=>{
         expiry_date
     })
     console.log("regiter2",register)
+    register.generatePasswordReset();
+        await register.save();
     if(register)
     {
-        res.status(201).json({_id:register.id,pharmacy_name:register.pharmacy_name,email:register.email,phone_number:register.phone_number,dl_code:register.dl_code,address:register.address,gstno:register.gstno,expiry_date:register.expiry_date})
+        res.status(201).json({
+            message: "Registration successful",
+            user: {
+              _id: register.id,
+              pharmacy_name: register.pharmacy_name,
+              email: register.email,
+              phone_number: register.phone_number,
+              dl_code: register.dl_code,
+              address: register.address,
+              gstno: register.gstno,
+              expiry_date: register.expiry_date,
+            },
+          });
     }
     else{
         res.status(400).json({message:"Registration Failed"})
@@ -120,7 +146,8 @@ const loginUser = asyncHandler(async (req,res)=>{
     );
     res.status(200).json({jwttoken:accesstoken,usertype:"Pharma",id:login1._id,pharmacy_name:login1.pharmacy_name})
    }
-   if(login2 && (await bcrypt.compare(password,login2.password)))
+  
+   else if(login2 && (await bcrypt.compare(password,login2.password)))
     {
  
       const accesstoken=await jwt.sign({
@@ -136,7 +163,7 @@ const loginUser = asyncHandler(async (req,res)=>{
      );
      res.status(200).json({jwttoken:accesstoken,usertype:"Dist",id:login2._id,pharmacy_name:login2.pharmacy_name})
     }
-    if(login3 && (await bcrypt.compare(password,login3.password)))
+    else if(login3 && (await bcrypt.compare(password,login3.password)))
         {
      
           const accesstoken=await jwt.sign({
@@ -149,7 +176,13 @@ const loginUser = asyncHandler(async (req,res)=>{
           {expiresIn:"15min"}
          );
          res.status(200).json({jwttoken:accesstoken,usertype:"Admin",id:login3._id})
-        }
+        } 
+        else {
+            res.status(401);
+            return res.json({ message: "Invalid credentials" });
+          }
+        
+       
 })
 //@desc get all distdata by pharam id
 //@router /api/user/getdistdatabyphid/:id
@@ -202,7 +235,10 @@ const getDistDataController = asyncHandler(async(req, res) => {
             pharmacy_name: 1,
             phone_number: 1,
             email: 1,
-            dl_code: 1
+            dl_code: 1,
+            address: 1,
+            createdAt: 1,
+            expiry_date: 1
         });
     
     res.json({ success: true, data: dist[0] }); 

@@ -2,15 +2,9 @@ const Register = require("../models/registerModel");
 const asyncHandler = require("express-async-handler");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
+const Register2=require("../models/registerModel2")
 
-// Configure the transporter for Nodemailer
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'venkateshyanamaddi0312@gmail.com',
-        pass: 'Venki@0312' // Be cautious with hardcoding passwords; consider using environment variables
-    }
-});
+
 
 //@desc ResetPassword
 //@route POST /api/user/resetpassword
@@ -22,14 +16,58 @@ const ResetPassword = asyncHandler(async (req, res) => {
 
         // Find user by dl_code
         const user = await Register.findOne({ dl_code });
+       
+        
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found with this DL number'
-            });
-        }
+            const user2 = await Register2.findOne({ dl_code });
+            if(!user2)
+            {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found with this DL number'
+                });
 
-        // Generate and save reset token
+            }
+            const resetToken = user2.generatePasswordReset();
+            console.log("Generated resetToken:", resetToken);
+            
+            // Save the user with the new reset token
+            await user2.save();
+            console.log("User after saving:", {
+                resetToken: user2.resetPasswordToken,
+                expires: user2.resetPasswordExpires
+            });
+    
+            // Format phone number and remove any spaces
+            const fullPhoneNumber = `91${user2.phone_number}`;
+            
+            try {
+                // Send SMS
+                const smsResponse = await fetch(`https://www.smsgatewayhub.com/api/mt/SendSMS?APIKey=uewziuRKDUWctgdrHdXm5g&senderid=MEDSCR&channel=2&DCS=0&flashsms=0&number=${fullPhoneNumber}&text=Your Medscore password reset code is:${resetToken}. This code will expire in 1 hour&route=1`);
+    
+                const smsData = await smsResponse.json();
+    
+                if (!smsResponse.ok) {
+                    throw new Error(smsData.message || 'Failed to send SMS');
+                }
+               console.log("sms sent successfully")
+               res.status(200).json({ 
+                    success: true,
+                    message: 'Reset code sent via SMS'
+                });
+    
+            } catch (smsError) {
+                console.error('SMS Error:', smsError);
+                // If SMS fails, reset the token
+                user2.resetPasswordToken = null;
+                user2.resetPasswordExpires = null;
+                await user2.save();
+                
+                throw new Error('Failed to send reset code via SMS. Please try again.');
+            }
+
+        }else{
+             // Generate and save reset token
         const resetToken = user.generatePasswordReset();
         console.log("Generated resetToken:", resetToken);
         
@@ -41,27 +79,18 @@ const ResetPassword = asyncHandler(async (req, res) => {
         });
 
         // Format phone number and remove any spaces
-        const fullPhoneNumber = `+91${user.phone_number}`;
+        const fullPhoneNumber = `91${user.phone_number}`;
         
         try {
             // Send SMS
-            const smsResponse = await fetch(`${process.env.REACT_APP_API_HOST}/api/user/sendSMS/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    to: fullPhoneNumber,
-                    body: `Your Medscore password reset code is: ${resetToken}. This code will expire in 1 hour.`
-                })
-            });
+            const smsResponse = await fetch(`https://www.smsgatewayhub.com/api/mt/SendSMS?APIKey=uewziuRKDUWctgdrHdXm5g&senderid=MEDSCR&channel=2&DCS=0&flashsms=0&number=${fullPhoneNumber}&text=Your Medscore password reset code is:${resetToken}. This code will expire in 1 hour&route=1`);
 
             const smsData = await smsResponse.json();
 
             if (!smsResponse.ok) {
                 throw new Error(smsData.message || 'Failed to send SMS');
             }
-
+           console.log("sms sent successfully")
             res.status(200).json({ 
                 success: true,
                 message: 'Reset code sent via SMS'
@@ -75,6 +104,7 @@ const ResetPassword = asyncHandler(async (req, res) => {
             await user.save();
             
             throw new Error('Failed to send reset code via SMS. Please try again.');
+        }
         }
 
     } catch (error) {
@@ -98,17 +128,30 @@ const confirmResetPassword = asyncHandler(async (req, res) => {
     });
 
     if (!user) {
-        res.status(400);
-        throw new Error('Invalid or expired reset token');
-    }
-
-    // Update the user's password
-    user.password = await bcrypt.hash(newPassword, 10); // Hash the new password
+        const user2 = await Register2.findOne({
+            resetPasswordToken: resetToken,
+            resetPasswordExpires: { $gt: Date.now() } // Ensure the token hasn't expired
+        });
+        if (!user2) {
+            res.status(400);
+            throw new Error('Invalid or expired reset token');
+        }
+    
+        // Update the user's password
+        user2.password = await bcrypt.hash(newPassword, 10); // Hash the new password
+        user2.resetPasswordToken = undefined; // Clear the reset token
+        user2.resetPasswordExpires = undefined; // Clear the expiry
+        await user2.save();
+    
+        res.status(200).json({ message: 'Password has been reset successfully' });
+    }else{
+        user.password = await bcrypt.hash(newPassword, 10); // Hash the new password
     user.resetPasswordToken = undefined; // Clear the reset token
     user.resetPasswordExpires = undefined; // Clear the expiry
     await user.save();
 
     res.status(200).json({ message: 'Password has been reset successfully' });
+    }
 });
 
 module.exports = { ResetPassword, confirmResetPassword };

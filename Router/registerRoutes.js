@@ -19,8 +19,8 @@ router.get("/getInvoiceRDforDistUpdate",getInvoiceRDDataforDistUpdate)
 router.get("/getPharamaDatainPharma/:id",getPData)
 router.post("/login",loginUser)
 router.get('/downloadReport/excel', downloadExcelReport);
-router.get('/countNotices/:id', countNotices);
-router.post("/sendSMS/",sendSms)
+router.get('/countNotices', countNotices);
+// router.post("/sendSMS/",sendSms)
 router.get('/getdistdatabyphid/:id', getDistData);
 router.get("/checkIfLinked/:pharmaId/:distId",checkIfLinked)
 router.post("/createAdmin",adminController)

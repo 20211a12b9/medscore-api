@@ -85,7 +85,7 @@ console.log("licenseNo",licenseNo)
     });
 })
 //@desc get invoiceRD data
-//@router /api/user/getInvoiceRD/:licenseNo
+//@router /api/user/getInvoiceRD/
 //access public
 const getInvoiceRDData=asyncHandler(async (req,res)=>{
     const  licenseNo  = req.query.licenseNo;
@@ -181,7 +181,7 @@ console.log("licenseNo",licenseNo)
 const getInvoiceRDDataforDist=asyncHandler(async (req,res)=>{
     const { distId } = req.params;
     const licenseNo = req.query.licenseNo;
-console.log("licenseNo",licenseNo)
+console.log("licenseNo,distId",licenseNo,distId)
     // Validate license number
     if (!licenseNo) {
         res.status(400);
@@ -232,10 +232,11 @@ console.log("alrdylinked",alrdylinked)
     });
 })
 //@desc get count no of notices
-//@router /api/user/countNotices/:id
+//@router /api/user/countNotices
 //@access public
 const countNotices=asyncHandler(async(req,res)=>{
-    const licenseNo=req.params.id;
+    const  licenseNo  = req.query.licenseNo;
+    
     const totalCount = await Invoice.countDocuments({ pharmadrugliseanceno: licenseNo });
 console.log(totalCount)
     res.status(200).json({
@@ -302,6 +303,9 @@ console.log("licenseNo",licenseNo)
         phone_number:1,
         dl_code:1,
          delayDays:1,
+         address:1,
+         expiry_date:1,
+         createdAt:1
   
     })       
 
