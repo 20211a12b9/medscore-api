@@ -879,7 +879,7 @@ const getSumByDescription = asyncHandler(async (req, res) => {
       const pharma = await Register.findOne({ dl_code: licenseNo });
       console.log("----",pharma)
       if (pharma) {
-        phname = pharma.pharmacy_name;
+        phname = pharma.pharmacy_name.toUpperCase();
       } else {
         phname = licenseNo;
       }
