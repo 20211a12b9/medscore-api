@@ -7,7 +7,10 @@ const ExcelJS = require('exceljs');
 const { default: mongoose } = require("mongoose");
 const nodeCron = require('node-cron'); 
 const { assign } = require("nodemailer/lib/shared");
-
+const XLSX = require('xlsx');
+const multer = require('multer');
+const path = require('path');
+const Outstanding=require("../models/outstanding");
 
 
 //@desc Invoce of customer
@@ -181,19 +184,35 @@ console.log("licenseNo",licenseNo)
 const getInvoiceRDDataforDist=asyncHandler(async (req,res)=>{
     const { distId } = req.params;
     const licenseNo = req.query.licenseNo;
-console.log("licenseNo,distId",licenseNo,distId)
+console.log("licenseNo",licenseNo)
     // Validate license number
     if (!licenseNo) {
         res.status(400);
         throw new Error('Pharmacy drug license number is required');
     }
-const pharma=await Register.findOne({dl_code:licenseNo})
-if (!pharma) {
-    res.status(400);
-    throw new Error('This licenseNo data is not found in DB');
+// const pharma=await Register.findOne({dl_code:licenseNo})
+let pharma;
+pharma=await Register.findOne({pharmacy_name:licenseNo})
+if(!pharma)
+{
+    pharma=await Register.findOne({dl_code:licenseNo})
+    if (!pharma) {
+   
+       
+            res.status(400);
+        throw new Error('This licenseNo data is not found in DB');
+        
+        
+    }
+    
+    
 }
+
+
 console.log("distId",distId,"pharmaId",pharma._id)
 const pharmaId=pharma._id
+const ls=pharma.dl_code;
+
 const alrdylinked = await Link.findOne({pharmaId,distId });
 console.log("alrdylinked",alrdylinked)
     if(!alrdylinked)
@@ -202,7 +221,7 @@ console.log("alrdylinked",alrdylinked)
         throw new Error('You not linked with search licenseNo');
     }
     // Find all invoices matching the license number
-    const invoiceData = await InvoiceRD.find({ pharmadrugliseanceno: licenseNo,reportDefault:true })
+    const invoiceData = await InvoiceRD.find({ pharmadrugliseanceno: ls,reportDefault:true })
     .select({
         pharmadrugliseanceno:1,
          invoice: 1,
@@ -294,9 +313,25 @@ console.log("licenseNo",licenseNo)
         res.status(400);
         throw new Error('Pharmacy drug license number is required');
     }
-
+    let pharma;
+    pharma=await Register.findOne({pharmacy_name:licenseNo})
+    if(!pharma)
+    {
+        pharma=await Register.findOne({dl_code:licenseNo})
+        if (!pharma) {
+       
+           
+                res.status(400);
+            throw new Error('This licenseNo data is not found in DB');
+            
+            
+        }
+        
+        
+    }
+    const ls=pharma.dl_code;
     // Find all invoices matching the license number
-    const pharmadata = await Register.find({ dl_code: licenseNo })
+    const pharmadata = await Register.find({ dl_code: ls })
     .select({
         pharmacy_name:1,
         email: 1,
@@ -688,6 +723,195 @@ const getinvoiceRDbydistId=asyncHandler(async(req,res)=>{
     });
 
 })
-module.exports={InvoiceController,getInvoiceData,linkpharmaController,getPharmaData,InvoiceReportDefaultController,getInvoiceRDData,getPData,downloadExcelReport,countNotices,checkIfLinked,getInvoiceRDDataforDist,updateDefault,getInvoiceRDDataforDistUpdate,disputebyPharma,adminupdate,updateReportDefaultStatus,getinvoicesbydistId,getinvoiceRDbydistId}
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/') // Make sure this folder exists
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname))
+    }
+});
+const upload = multer({
+    storage: storage,
+    fileFilter: function (req, file, cb) {
+        // Accept excel files only
+        if (file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || 
+            file.mimetype === "application/vnd.ms-excel") {
+            cb(null, true);
+        } else {
+            cb(null, false);
+            return cb(new Error('Only excel files are allowed!'));
+        }
+    }
+}).single('file');  
+
+
+//@desc upload files
+//@router /api/user/uploads
+//access public
+const FileUploadController = asyncHandler(async (req, res) => {
+    try {
+        // Handle file upload
+        upload(req, res, async function (err) {
+            if (err) {
+                return res.status(400).json({
+                    message: err.message
+                });
+            }
+
+            // Check if file exists
+            if (!req.file) {
+                return res.status(400).json({
+                    message: 'Please upload an excel file!'
+                });
+            }
+
+            // Read excel file
+            const workbook = XLSX.readFile(req.file.path);
+            const sheet_name_list = workbook.SheetNames;
+            const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
+
+            // Assuming you have a mongoose model called 'YourModel'
+            // Replace this with your actual model
+            const YourModel = require('../models/yourModel');
+
+            // Store data in MongoDB
+            await YourModel.insertMany(data);
+
+            // Optional: Delete the uploaded file after processing
+            const fs = require('fs');
+            fs.unlinkSync(req.file.path);
+
+            res.status(200).json({
+                message: 'File uploaded and data stored successfully!',
+                data: data
+            });
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error uploading file',
+            error: error.message
+        });
+    }
+});
+
+
+//@desc upload oustadinfxlfile
+//@router /api/user/outstanding/:id
+//@access public
+
+const uploadOutstandingFile=asyncHandler(async(req,res)=>{
+    const customerId=req.params.id;
+    if(!customerId)
+        {
+            res.status(400)
+            throw new Error("id required")
+            
+        }
+    try{
+        upload(req,res,async function (err){
+            if (err) {
+                return res.status(400).json({
+                    message: err.message
+                });
+            }
+            if (!req.file) {
+                return res.status(400).json({
+                    message: 'Please upload an excel file!'
+                });
+            }
+           const workbook=XLSX.readFile(req.file.path);
+           const sheet_name_list=workbook.SheetNames;
+           const data=XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]])
+          
+           const fs = require('fs');
+           try {
+            // Check if customer already exists
+            const validatedData = data.map(row => ({
+                Description: row.Description,
+                Total: parseFloat(row.Total),
+                additionalFields: { ...row }
+            }));
+            let outstanding = await Outstanding.findOne({ customerId });
+            if (!outstanding) {
+                outstanding = new Outstanding({ customerId, uploadData: [] });
+            }
+
+            // Add new data
+            outstanding.uploadData.push(...validatedData);
+            await outstanding.save();
+            
+
+          
+           
+          
+
+            res.status(200).json({
+                customerId: customerId,
+                message: 'Data uploaded successfully',
+                recordsAdded: validatedData.length,
+                totalRecords: outstanding.uploadData.length
+            });
+            fs.unlinkSync(req.file.path);
+        } catch (dbError) {
+            // If database operation fails, delete the uploaded file
+            fs.unlinkSync(req.file.path);
+            throw dbError;
+        }
+        })
+    }catch(error){
+
+        res.status(500).json({
+            message: 'Error uploading file',
+            error: error.message
+        });
+    }
+
+}
+)
+//@desc get uploaded data by description
+//@router /api/user/getUploadedData
+//@access public
+const getSumByDescription = asyncHandler(async (req, res) => {
+    try {
+      const { licenseNo } = req.query;
+      let phname;
+      const pharma=await Register.findOne({dl_code:licenseNo})
+      if(pharma)
+      {
+         phname=pharma.pharmacy_name;
+      }
+      else{
+        phname=licenseNo;
+      }
+      console.log(phname,"phanme")
+      const data = await Outstanding.aggregate([
+        { $unwind: '$uploadData' },
+        {
+          $match: {
+            'uploadData.Description': phname
+          }
+        },
+        {
+            $group: {
+              _id: '$uploadData.Description',
+              totalSum: { $sum: { $toDouble: '$uploadData.Total' } }
+            }
+          },
+          {
+            $project: {
+              Description: '$_id',
+              Total: '$totalSum'
+            }
+          }
+      ]);
+      console.log(data)
+      res.status(200).json(data);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+module.exports={InvoiceController,getInvoiceData,linkpharmaController,getPharmaData,InvoiceReportDefaultController,getInvoiceRDData,getPData,downloadExcelReport,countNotices,checkIfLinked,getInvoiceRDDataforDist,updateDefault,getInvoiceRDDataforDistUpdate,disputebyPharma,adminupdate,updateReportDefaultStatus,getinvoicesbydistId,getinvoiceRDbydistId,FileUploadController,uploadOutstandingFile,getSumByDescription}
 
 
