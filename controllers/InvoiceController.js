@@ -212,7 +212,7 @@ if(!pharma)
 console.log("distId",distId,"pharmaId",pharma._id)
 const pharmaId=pharma._id
 const ls=pharma.dl_code;
-
+console.log(ls,"---ls")
 const alrdylinked = await Link.findOne({pharmaId,distId });
 console.log("alrdylinked",alrdylinked)
     if(!alrdylinked)
@@ -876,15 +876,16 @@ const getSumByDescription = asyncHandler(async (req, res) => {
     try {
       const { licenseNo } = req.query;
       let phname;
-      const pharma=await Register.findOne({dl_code:licenseNo})
-      if(pharma)
-      {
-         phname=pharma.pharmacy_name;
+      const pharma = await Register.findOne({ dl_code: licenseNo });
+      console.log("----",pharma)
+      if (pharma) {
+        phname = pharma.pharmacy_name;
+      } else {
+        phname = licenseNo;
       }
-      else{
-        phname=licenseNo;
-      }
-      console.log(phname,"phanme")
+      
+      console.log(phname, "phanme");
+      
       const data = await Outstanding.aggregate([
         { $unwind: '$uploadData' },
         {
@@ -893,24 +894,28 @@ const getSumByDescription = asyncHandler(async (req, res) => {
           }
         },
         {
-            $group: {
-              _id: '$uploadData.Description',
-              totalSum: { $sum: { $toDouble: '$uploadData.Total' } }
-            }
-          },
-          {
-            $project: {
-              Description: '$_id',
-              Total: '$totalSum'
-            }
+          $group: {
+            _id: '$uploadData.Description',
+            totalSum: { $sum: { $toDouble: '$uploadData.Total' } }
           }
+        },
+        {
+          $project: {
+            Description: '$_id',
+            Total: '$totalSum'
+          }
+        }
       ]);
-      console.log(data)
-      res.status(200).json(data);
+      
+      // If data array is empty, return default object
+      const response = data.length > 0 ? data : [{ Description: '', Total: 0 }];
+      
+      console.log(response);
+      res.status(200).json(response);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  });
+});
   
 module.exports={InvoiceController,getInvoiceData,linkpharmaController,getPharmaData,InvoiceReportDefaultController,getInvoiceRDData,getPData,downloadExcelReport,countNotices,checkIfLinked,getInvoiceRDDataforDist,updateDefault,getInvoiceRDDataforDistUpdate,disputebyPharma,adminupdate,updateReportDefaultStatus,getinvoicesbydistId,getinvoiceRDbydistId,FileUploadController,uploadOutstandingFile,getSumByDescription}
 

@@ -17,9 +17,12 @@ const oustandingModel=mongoose.Schema({
                 type:String,
                 required:[true,"Description is mandatory"]
             },
-            additionalFields: {
-                type: mongoose.Schema.Types.Mixed
-            }
+            uploadedAt: {
+                type: Date,
+                required: [true, "uploadedAt is mandatory"],
+                default: Date.now
+              }
+            
         }
     ]
     
