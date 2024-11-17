@@ -6,12 +6,12 @@ const cors = require('cors');
 connectDb();
 const app=express();
 app.use(express.json());
-const port=8080 || 5001;
+const port=process.env.PORT || 5001;
 const path = require('path');
 
 app.use(cors())
 const corsOptions = {
-    origin: ['http://localhost:3000', 'https://medscore-api.onrender.com'],
+    origin: ['http://localhost:3000', 'https://medscore-api.onrender.com','medscore-api-f8g2gef3cghvdxgm.canadacentral-01.azurewebsites.net],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true, // If you're using cookies or authentication
