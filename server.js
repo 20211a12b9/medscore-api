@@ -14,8 +14,8 @@ const corsOptions = {
     origin: ['http://localhost:3000', 'https://medscore-api.onrender.com','medscore-api-f8g2gef3cghvdxgm.canadacentral-01.azurewebsites.net],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true, // If you're using cookies or authentication
-    maxAge: 86400 // How long the results of a preflight request can be cached
+    credentials: true, 
+    maxAge: 86400 
   };
   
   app.use(cors(corsOptions));
